@@ -1,0 +1,5 @@
+.env
+.tunnel.pid
+.idea/
+*.log
+*.json.tmp
