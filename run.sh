@@ -88,7 +88,7 @@ run_test() {
   local script="$1" peak="${2:-}"
   require_compose
   tunnel_up
-  docker compose up -d prometheus grafana
+  docker compose up -d prometheus grafana blackbox
 
   local testid="${TESTID:-$(date +%Y%m%d-%H%M%S)}"
   local extra=()
@@ -108,7 +108,7 @@ run_test() {
 }
 
 case "${1:-}" in
-  up)          require_compose; tunnel_up; docker compose up -d prometheus grafana ;;
+  up)          require_compose; tunnel_up; docker compose up -d prometheus grafana blackbox ;;
   down)        require_compose; docker compose down; tunnel_down ;;
   reset)       require_compose; docker compose down -v; tunnel_down ;;
   logs)        require_compose; docker compose logs -f --tail=100 ;;
