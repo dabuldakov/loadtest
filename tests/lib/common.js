@@ -30,7 +30,7 @@ export function rampStages(peakRps) {
 
 // One scenario per endpoint, each driven by a ramping arrival-rate executor.
 //
-// preAllocatedVUs держим маленьким (~10% от rate). k6 eagerly инициализирует
+// preAllocatedVUs держим умеренным (~15% от rate). k6 eagerly инициализирует
 // preAllocatedVUs ещё до старта, а каждый VU открывает своё соединение. Если
 // заложить 50% от RPS (как было), при 1000 RPS поднимается ~500 соединений —
 // это в разы больше реально нужной конкурентности и перегружает УСТАНОВКУ
@@ -39,7 +39,7 @@ export function rampStages(peakRps) {
 // Коэффициент можно переопределить: PREALLOC_FACTOR=0.2 ./run.sh makeup 1000
 export function arrivalScenario(exec, peakRps, tags = {}) {
   const rate = Math.max(1, Math.round(peakRps));
-  const preallocFactor = Number(__ENV.PREALLOC_FACTOR || 0.1);
+  const preallocFactor = Number(__ENV.PREALLOC_FACTOR || 0.15);
   return {
     executor: 'ramping-arrival-rate',
     exec,
