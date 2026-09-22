@@ -28,3 +28,14 @@ scrape_configs:
       - source_labels: ['container']
         regex: '(chat|makeup).*'
         target_label: app
+    pipeline_stages:
+      # Для JSON-логов приложений (chat/makeup) вытаскиваем level в отдельный
+      # label — по нему удобно и дешево фильтровать и считать ошибки.
+      - match:
+          selector: '{app=~".+"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+            - labels:
+                level:
