@@ -39,6 +39,8 @@ Grafana:    http://localhost:3000   (admin/admin)
             дашборды "k6 Prometheus" и "Node Exporter Full"
             datasource Loki — логи бэкендов (нужен туннель, см. выше)
 Prometheus: http://localhost:9090
+Alertmanager: http://localhost:9093  (алерты о недоступности -> email, SMTP в .env)
+Health:     blackbox проверяет /actuator/health бэкендов (job blackbox-http-health)
 EOF
 }
 
@@ -91,7 +93,7 @@ run_test() {
   local script="$1" peak="${2:-}"
   require_compose
   tunnel_up
-  docker compose up -d prometheus grafana blackbox
+  docker compose up -d prometheus alertmanager grafana blackbox
 
   local testid="${TESTID:-$(date +%Y%m%d-%H%M%S)}"
   local extra=()
@@ -111,7 +113,7 @@ run_test() {
 }
 
 case "${1:-}" in
-  up)          require_compose; tunnel_up; docker compose up -d prometheus grafana blackbox ;;
+  up)          require_compose; tunnel_up; docker compose up -d prometheus alertmanager grafana blackbox ;;
   down)        require_compose; docker compose down; tunnel_down ;;
   reset)       require_compose; docker compose down -v; tunnel_down ;;
   logs)        require_compose; docker compose logs -f --tail=100 ;;
