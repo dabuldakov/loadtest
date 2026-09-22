@@ -24,19 +24,17 @@ services:
       - prometheus_data:/prometheus
 
   # Alertmanager — принимает алерты от Prometheus и шлёт их на email.
-  # SMTP-настройки берутся из .env (--config.expand-env), см. .env.example.
+  # Конфиг рендерится из alertmanager.yml.tmpl + .env командой `./run.sh up`
+  # (файл alertmanager.local.yml создаётся локально и не коммитится).
   alertmanager:
     image: prom/alertmanager:latest
     network_mode: host
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
-      - --config.expand-env
       - --web.listen-address=127.0.0.1:9093
       - --storage.path=/alertmanager
-    env_file:
-      - .env
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/alertmanager.local.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     depends_on:
       - prometheus

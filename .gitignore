@@ -3,3 +3,4 @@
 .idea/
 *.log
 *.json.tmp
+alertmanager/alertmanager.local.yml

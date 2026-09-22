@@ -48,6 +48,25 @@ require_compose() {
   docker compose version >/dev/null 2>&1 || { echo "Нужен Docker Compose v2"; exit 1; }
 }
 
+# Рендерит alertmanager.local.yml из шаблона и .env (подставляет SMTP_*/ALERT_*).
+render_alertmanager() {
+  local tpl="alertmanager/alertmanager.yml.tmpl"
+  local out="alertmanager/alertmanager.local.yml"
+  [[ -f "$tpl" ]] || return 0
+  if command -v envsubst >/dev/null 2>&1; then
+    envsubst < "$tpl" > "$out"
+  else
+    python3 - "$tpl" "$out" <<'PY'
+import os, re, sys
+tpl, out = sys.argv[1], sys.argv[2]
+s = open(tpl).read()
+s = re.sub(r'\$\{(\w+)\}', lambda m: os.environ.get(m.group(1), ''), s)
+open(out, 'w').write(s)
+PY
+  fi
+  echo "==> alertmanager: сгенерирован $out (SMTP из .env)"
+}
+
 port_open() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
 tunnel_up() {
@@ -92,6 +111,7 @@ tunnel_down() {
 run_test() {
   local script="$1" peak="${2:-}"
   require_compose
+  render_alertmanager
   tunnel_up
   docker compose up -d prometheus alertmanager grafana blackbox
 
@@ -113,7 +133,7 @@ run_test() {
 }
 
 case "${1:-}" in
-  up)          require_compose; tunnel_up; docker compose up -d prometheus alertmanager grafana blackbox ;;
+  up)          require_compose; render_alertmanager; tunnel_up; docker compose up -d prometheus alertmanager grafana blackbox ;;
   down)        require_compose; docker compose down; tunnel_down ;;
   reset)       require_compose; docker compose down -v; tunnel_down ;;
   logs)        require_compose; docker compose logs -f --tail=100 ;;
