@@ -37,6 +37,7 @@ usage() {
 
 Grafana:    http://localhost:3000   (admin/admin)
             дашборды "k6 Prometheus" и "Node Exporter Full"
+            datasource Loki — логи бэкендов (нужен туннель, см. выше)
 Prometheus: http://localhost:9090
 EOF
 }
@@ -56,9 +57,11 @@ tunnel_up() {
     echo "==> порт $NODE_EXPORTER_LOCAL_PORT уже занят — считаю, что туннель поднят"
     return 0
   fi
-  echo "==> поднимаю SSH-туннель к node_exporter: $SSH_TARGET (127.0.0.1:$NODE_EXPORTER_LOCAL_PORT)"
+  # Пробрасываем наружу два сервиса: node_exporter (9100) и Loki/logs (3100)
+  echo "==> поднимаю SSH-туннели: $SSH_TARGET (9100 node_exporter, 3100 Loki)"
   nohup ssh -N \
     -L "127.0.0.1:${NODE_EXPORTER_LOCAL_PORT}:127.0.0.1:${NODE_EXPORTER_LOCAL_PORT}" \
+    -L "127.0.0.1:3100:127.0.0.1:3100" \
     -p "$SSH_PORT" -i "$SSH_KEY" \
     -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ConnectTimeout=10 \
     -o BatchMode=yes \
