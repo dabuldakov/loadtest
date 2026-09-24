@@ -24,18 +24,32 @@ scrape_configs:
       - source_labels: ['container']
         regex: '(gitlab.*|promtail|loki|node_exporter|blackbox)'
         action: drop
-      # label 'app' для удобных запросов {app="chat"} / {app="makeup"}
+      # label 'app' для удобных запросов {app="chat"} / {app="makeup"} / {app="wcm"}
       - source_labels: ['container']
         regex: '(chat|makeup).*'
         target_label: app
+      # world-country-monitoring -> app="wcm"
+      - source_labels: ['container']
+        regex: 'world-country-monitoring.*'
+        target_label: app
+        replacement: 'wcm'
     pipeline_stages:
       # Для JSON-логов приложений (chat/makeup) вытаскиваем level в отдельный
       # label — по нему удобно и дешево фильтровать и считать ошибки.
       - match:
-          selector: '{app=~".+"}'
+          selector: '{app=~"chat|makeup"}'
           stages:
             - json:
                 expressions:
                   level: level
+            - labels:
+                level:
+      # world-country-monitoring пишет обычный текст Spring Boot —
+      # уровень достаём регуляркой из строки лога.
+      - match:
+          selector: '{app="wcm"}'
+          stages:
+            - regex:
+                expression: '^(?P<ts>\S+)\s+(?P<level>TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\b'
             - labels:
                 level:

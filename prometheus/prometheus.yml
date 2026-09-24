@@ -49,7 +49,7 @@ scrape_configs:
     params:
       module: [tcp_connect]
     static_configs:
-      - targets: ["90.188.89.63:8085", "90.188.89.63:8086"]
+      - targets: ["90.188.89.63:8085", "90.188.89.63:8086", "90.188.89.63:8087"]
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -68,6 +68,7 @@ scrape_configs:
       - targets:
           - http://90.188.89.63:8085/actuator/health   # makeup
           - http://90.188.89.63:8086/actuator/health   # chat
+          - http://90.188.89.63:8087/actuator/health   # world-country-monitoring
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

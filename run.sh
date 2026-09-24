@@ -12,7 +12,7 @@ PIDFILE=".tunnel.pid"
 
 usage() {
   cat <<'EOF'
-Нагрузочное тестирование бэкендов makeup и chat (k6 + Prometheus + Grafana).
+Нагрузочное тестирование бэкендов makeup, chat и world-country-monitoring (k6 + Prometheus + Grafana).
 Серверные метрики (CPU/RAM/диск/сеть) идут с node_exporter через SSH-туннель.
 
 Использование:
@@ -26,6 +26,7 @@ usage() {
 
   ./run.sh makeup [PEAK_RPS]   Read-only тест makeup (по умолчанию 50 RPS на пике)
   ./run.sh chat   [PEAK_RPS]   Read-only тест chat   (по умолчанию 30 RPS на пике)
+  ./run.sh wcm    [PEAK_RPS]   Read-only тест world-country-monitoring (по умолчанию 50 RPS на пике)
 
 Переменные (можно задать в .env):
   SSH_TARGET=dmitry_buldakov@90.188.89.63   куда туннелировать
@@ -142,6 +143,7 @@ case "${1:-}" in
   tunnel-down) tunnel_down ;;
   makeup)      shift; run_test makeup-read "${1:-}" ;;
   chat)        shift; run_test chat-read "${1:-}" ;;
+  wcm)         shift; run_test wcm-read "${1:-}" ;;
   ""|-h|--help|help) usage ;;
   *) echo "Неизвестная команда: $1"; echo; usage; exit 1 ;;
 esac
