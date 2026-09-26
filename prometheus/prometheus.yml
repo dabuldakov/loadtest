@@ -27,7 +27,7 @@ scrape_configs:
           instance: akm-server
       - targets: ["127.0.0.1:9101"]
         labels:
-          instance: loadtest-generator
+          instance: countrymonitoring
 
   # RTT/потери до целевого сервера через blackbox_exporter (127.0.0.1:9115).
   - job_name: blackbox-icmp
@@ -35,7 +35,7 @@ scrape_configs:
     params:
       module: [icmp]
     static_configs:
-      - targets: ["90.188.89.63"]
+      - targets: ["90.188.89.63", "89.104.66.226"]
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -49,7 +49,7 @@ scrape_configs:
     params:
       module: [tcp_connect]
     static_configs:
-      - targets: ["90.188.89.63:8085", "90.188.89.63:8086", "90.188.89.63:8087"]
+      - targets: ["90.188.89.63:8085", "90.188.89.63:8086", "89.104.66.226:8087"]
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -68,7 +68,7 @@ scrape_configs:
       - targets:
           - http://90.188.89.63:8085/actuator/health   # makeup
           - http://90.188.89.63:8086/actuator/health   # chat
-          - http://90.188.89.63:8087/actuator/health   # world-country-monitoring
+          - http://89.104.66.226:8087/actuator/health   # world-country-monitoring
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
