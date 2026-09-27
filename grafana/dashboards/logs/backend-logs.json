@@ -17,6 +17,7 @@
         "datasource": { "type": "loki", "uid": "ds_loki" },
         "definition": "label_values(app)",
         "query": "label_values(app)",
+        "allValue": ".+",
         "refresh": 1,
         "includeAll": true,
         "multi": true,
