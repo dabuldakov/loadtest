@@ -1,0 +1,27 @@
+# SSH-туннель к node_exporter на тестируемом сервере (akm-server).
+#
+# Нужен на машине, где крутится Prometheus/Grafana и node_exporter целевого
+# сервера недоступен напрямую: node_exporter там слушает только 127.0.0.1
+# (см. ./install-node-exporter.sh), а Prometheus скрейпит 127.0.0.1:9100
+# (job node, instance=akm-server в prometheus/prometheus.yml).
+#
+# Установка (от root, на машине с Prometheus):
+#   cp node-exporter-tunnel.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now node-exporter-tunnel
+#   ss -ltnp | grep 9100        # должен слушать ssh
+#
+# Параметры (подставить свои): порт SSH целевого сервера, ключ, пользователь.
+[Unit]
+Description=SSH-туннель к node_exporter на akm-server: 127.0.0.1:9100 -> 90.188.89.63:9100
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ssh -N -L 127.0.0.1:9100:127.0.0.1:9100 -p 2222 -i /root/.ssh/id_ed25519 -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=accept-new dmitry_buldakov@90.188.89.63
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

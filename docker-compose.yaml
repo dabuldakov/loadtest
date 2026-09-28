@@ -10,6 +10,7 @@ name: loadtest
 services:
   prometheus:
     image: prom/prometheus:latest
+    restart: unless-stopped
     network_mode: host
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -28,6 +29,7 @@ services:
   # (файл alertmanager.local.yml создаётся локально и не коммитится).
   alertmanager:
     image: prom/alertmanager:latest
+    restart: unless-stopped
     network_mode: host
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
@@ -42,6 +44,7 @@ services:
   # RTT и потери до целевого сервера (ICMP + TCP). Слушает только localhost.
   blackbox:
     image: prom/blackbox-exporter:latest
+    restart: unless-stopped
     network_mode: host
     command:
       - --config.file=/etc/blackbox/blackbox.yml
@@ -53,6 +56,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
+    restart: unless-stopped
     network_mode: host
     environment:
       GF_SECURITY_ADMIN_USER: admin
