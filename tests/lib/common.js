@@ -2,6 +2,14 @@ import { check } from 'k6';
 
 export const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
+// Заголовок, который требует бэкенд world-country-monitoring на всех
+// /api/wcm/*: FrontendAccessFilter отвечает 403 {"error":"forbidden"},
+// если X-WCM-Client не совпадает с application.frontend.client-key.
+// Без него весь сценарий wcm молча упирался в 403 и ничего не нагружал.
+export function wcmHeaders(extra = {}) {
+  return Object.assign({ 'X-WCM-Client': __ENV.WCM_CLIENT_KEY || 'wcm-frontend' }, extra);
+}
+
 export function authHeaders(token) {
   return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 }

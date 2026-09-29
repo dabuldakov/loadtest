@@ -1,9 +1,15 @@
 import http from 'k6/http';
-import { arrivalScenario, baseThresholds, ok, randomInt } from './lib/common.js';
+import { arrivalScenario, baseThresholds, ok, randomInt, wcmHeaders } from './lib/common.js';
 
-const BASE = (__ENV.WCM_BASE_URL || 'http://89.104.66.226:8087').replace(/\/$/, '');
+const BASE = (__ENV.WCM_BASE_URL || 'http://127.0.0.1:8087').replace(/\/$/, '');
 const API = `${BASE}/api/wcm/v0`;
 const PEAK = Number(__ENV.LOAD_PEAK_RPS || 50);
+
+// Все запросы к /api/wcm/* обязаны нести X-WCM-Client, иначе FrontendAccessFilter
+// отвечает 403 и сценарий ничего не нагружает.
+function get(url) {
+  return http.get(url, { headers: wcmHeaders() });
+}
 
 const COUNTRIES = ['RUS', 'USA', 'CHN', 'DEU', 'AUS', 'GBR', 'IND', 'FRA'];
 const YEARS = ['2022', '2023', '2024'];
@@ -33,41 +39,41 @@ function year() {
 }
 
 export function countryAll() {
-  ok(http.get(`${API}/country/all`), 'country/all');
+  ok(get(`${API}/country/all`), 'country/all');
 }
 
 export function reservesCountry() {
-  ok(http.get(`${API}/international-reserve/country/${country()}`), 'international-reserve/country');
+  ok(get(`${API}/international-reserve/country/${country()}`), 'international-reserve/country');
 }
 
 export function reservesYear() {
-  ok(http.get(`${API}/international-reserve/year/${year()}`), 'international-reserve/year');
+  ok(get(`${API}/international-reserve/year/${year()}`), 'international-reserve/year');
 }
 
 export function gdpCountry() {
-  ok(http.get(`${API}/gross-domestic-product/country/${country()}`), 'gdp/country');
+  ok(get(`${API}/gross-domestic-product/country/${country()}`), 'gdp/country');
 }
 
 export function gdpYear() {
-  ok(http.get(`${API}/gross-domestic-product/year/${year()}`), 'gdp/year');
+  ok(get(`${API}/gross-domestic-product/year/${year()}`), 'gdp/year');
 }
 
 export function debtCountry() {
-  ok(http.get(`${API}/debt/country/${country()}`), 'debt/country');
+  ok(get(`${API}/debt/country/${country()}`), 'debt/country');
 }
 
 export function debtGrossCountry() {
-  ok(http.get(`${API}/debt/debt-gross/country/${country()}`), 'debt/debt-gross/country');
+  ok(get(`${API}/debt/debt-gross/country/${country()}`), 'debt/debt-gross/country');
 }
 
 export function debtYear() {
-  ok(http.get(`${API}/debt/year/${year()}`), 'debt/year');
+  ok(get(`${API}/debt/year/${year()}`), 'debt/year');
 }
 
 export function moneySupplyCountry() {
-  ok(http.get(`${API}/money-supply/country/${country()}`), 'money-supply/country');
+  ok(get(`${API}/money-supply/country/${country()}`), 'money-supply/country');
 }
 
 export function moneySupplyYear() {
-  ok(http.get(`${API}/money-supply/year/${year()}`), 'money-supply/year');
+  ok(get(`${API}/money-supply/year/${year()}`), 'money-supply/year');
 }
