@@ -1,97 +1,23 @@
 name: loadtest
 
-# Стек работает в host-сети и слушает только loopback:
-#   Prometheus -> 127.0.0.1:9090
-#   Grafana    -> 127.0.0.1:3000
-# node_exporter на прод-сервере слушает 127.0.0.1:9100 и доступен через SSH-туннель
-# (см. ./run.sh tunnel), поэтому Prometheus скрейпит его как 127.0.0.1:9100.
-# blackbox_exporter (127.0.0.1:9115) меряет RTT/потери до целевого сервера.
+# Только генератор нагрузки. Ни Prometheus, ни Grafana, ни алертов здесь нет:
+# метрики прогона уходят в стек наблюдаемости через remote-write
+# (K6_PROMETHEUS_RW_SERVER_URL в .env), а смотрят их в Grafana оттуда.
+# Постоянный стек мониторинга живёт в отдельном репозитории `monitoring`.
 
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    restart: unless-stopped
-    network_mode: host
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --storage.tsdb.path=/prometheus
-      - --storage.tsdb.retention.time=30d
-      - --web.enable-remote-write-receiver
-      - --enable-feature=native-histograms
-      - --web.listen-address=127.0.0.1:9090
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
-      - prometheus_data:/prometheus
-
-  # Alertmanager — принимает алерты от Prometheus и шлёт их на email.
-  # Конфиг рендерится из alertmanager.yml.tmpl + .env командой `./run.sh up`
-  # (файл alertmanager.local.yml создаётся локально и не коммитится).
-  alertmanager:
-    image: prom/alertmanager:latest
-    restart: unless-stopped
-    network_mode: host
-    command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --web.listen-address=127.0.0.1:9093
-      - --storage.path=/alertmanager
-    volumes:
-      - ./alertmanager/alertmanager.local.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
-    depends_on:
-      - prometheus
-
-  # RTT и потери до целевого сервера (ICMP + TCP). Слушает только localhost.
-  blackbox:
-    image: prom/blackbox-exporter:latest
-    restart: unless-stopped
-    network_mode: host
-    command:
-      - --config.file=/etc/blackbox/blackbox.yml
-      - --web.listen-address=127.0.0.1:9115
-    volumes:
-      - ./blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
-    depends_on:
-      - prometheus
-
-  grafana:
-    image: grafana/grafana:latest
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-      GF_SERVER_HTTP_ADDR: 127.0.0.1
-      GF_SERVER_HTTP_PORT: "3000"
-    volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-
   k6:
     image: grafana/k6:latest
     profiles: ["k6"]
     network_mode: host
     environment:
-      K6_PROMETHEUS_RW_SERVER_URL: http://127.0.0.1:9090/api/v1/write
+      K6_PROMETHEUS_RW_SERVER_URL: ${K6_PROMETHEUS_RW_SERVER_URL:-http://127.0.0.1:9090/api/v1/write}
       K6_PROMETHEUS_RW_TREND_STATS: p(95),p(99),avg,min,max
       K6_PROMETHEUS_RW_PUSH_INTERVAL: 5s
-      MAKEUP_BASE_URL: ${MAKEUP_BASE_URL:-http://90.188.89.63:8085}
-      CHAT_BASE_URL: ${CHAT_BASE_URL:-http://90.188.89.63:8086}
-      WCM_BASE_URL: ${WCM_BASE_URL:-http://90.188.89.63:8087}
+      MAKEUP_BASE_URL: ${MAKEUP_BASE_URL:-http://168.222.194.206:8085}
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-http://168.222.194.206:8086}
+      WCM_BASE_URL: ${WCM_BASE_URL:-http://89.104.66.226:8087}
       CHAT_USERNAME: ${CHAT_USERNAME:-}
       CHAT_PASSWORD: ${CHAT_PASSWORD:-}
     volumes:
       - ./tests:/scripts:ro
-    depends_on:
-      - prometheus
-
-volumes:
-  prometheus_data:
-  grafana_data:
-  alertmanager_data:

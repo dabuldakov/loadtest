@@ -1,0 +1,73 @@
+# Нагрузочное тестирование
+
+Нагрузочные тесты бэкендов **makeup**, **chat** и **world-country-monitoring**.
+В репозитории только генератор нагрузки ([k6](https://k6.io)); всё, что
+собирает, хранит и показывает результаты (Prometheus, Grafana, Loki,
+алерты), живёт в отдельном репозитории `monitoring`.
+
+## Как это связано
+
+```
+здесь                          там (репозиторий monitoring)
+k6 ──remote-write──►  Prometheus ──► Grafana "k6 Prometheus" (фильтр testid)
+```
+
+Прогон шлёт метрики в Prometheus стеке мониторинга по
+`K6_PROMETHEUS_RW_SERVER_URL`. Если этот адрес недоступен с машины прогона,
+тест всё равно отработает — результаты будут в stdout, но в Grafana
+не появятся (run.sh предупредит об этом заранее).
+
+## Быстрый старт
+
+```bash
+cp .env.example .env && nano .env   # адреса приложений и куда сливать метрики
+./run.sh targets                    # проверить, что адреса из .env отвечают
+./run.sh makeup                     # тест makeup
+```
+
+## Команды
+
+```
+./run.sh makeup [PEAK_RPS]   read-only тест makeup (по умолчанию 50 RPS)
+./run.sh chat   [PEAK_RPS]   read-only тест chat   (по умолчанию 30 RPS)
+./run.sh wcm    [PEAK_RPS]   read-only тест wcm    (по умолчанию 50 RPS)
+./run.sh targets             health-check адресов из .env
+./run.sh shell               интерактивная оболочка k6 (отладка)
+./run.sh lint [script]       проверить сценарий без запуска (k6 inspect)
+```
+
+Прогон всегда получает лейбл `testid` — по нему в Grafana отделяют один
+прогон от другого:
+
+```bash
+TESTID=baseline ./run.sh chat 100
+```
+
+## Параметры нагрузки
+
+Пик задаётся аргументом команды или через `LOAD_PEAK_RPS` в `.env`.
+Форма рампы — 10% → 50% → 100% → 100% → 0, тайминги переопределяются:
+
+```bash
+LOAD_RAMP=5s LOAD_HOLD=10s LOAD_DOWN=2s ./run.sh chat 50   # быстрый смоук
+PREALLOC_FACTOR=0.2 ./run.sh makeup 1000                    # больше VUs заранее
+```
+
+`PREALLOC_FACTOR` — доля пикового RPS, которую k6 поднимает заранее.
+k6 инициализирует `preAllocatedVUs` до старта, и каждый открывает соединение;
+при слишком большом значении нагрузка ложится на установку соединений, а не
+на приложение (выглядит как `dial: i/o timeout`). Нехватку k6 доберёт из
+`maxVUs`, если вырастет latency.
+
+## Сценарии
+
+| Файл | Приложение | Что нагружает |
+|---|---|---|
+| `tests/makeup-read.js` | makeup | новости, категории, поиск |
+| `tests/chat-read.js` | chat | авторизация, пользователи, чаты, контакты |
+| `tests/wcm-read.js` | world-country-monitoring | публичные эндпоинты |
+
+Общие помощники и пороги — в `tests/lib/common.js`.
+Все тесты read-only; `chat` в `setup()` логинится существующим пользователем
+(`CHAT_USERNAME`/`CHAT_PASSWORD`), а если их нет — регистрирует одноразового
+`lt_<timestamp>`. Чистка тестовых пользователей — `sql/cleanup-chat-loadtest.sql`.

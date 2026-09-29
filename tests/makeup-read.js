@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { arrivalScenario, baseThresholds, ok, randomInt } from './lib/common.js';
 
-const BASE = (__ENV.MAKEUP_BASE_URL || 'http://90.188.89.63:8085').replace(/\/$/, '');
+const BASE = (__ENV.MAKEUP_BASE_URL || 'http://168.222.194.206:8085').replace(/\/$/, '');
 const PEAK = Number(__ENV.LOAD_PEAK_RPS || 50);
 
 export const options = {

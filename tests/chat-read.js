@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { authHeaders, JSON_HEADERS, arrivalScenario, baseThresholds, ok } from './lib/common.js';
 
-const BASE = (__ENV.CHAT_BASE_URL || 'http://90.188.89.63:8086').replace(/\/$/, '');
+const BASE = (__ENV.CHAT_BASE_URL || 'http://168.222.194.206:8086').replace(/\/$/, '');
 const PEAK = Number(__ENV.LOAD_PEAK_RPS || 30);
 
 export const options = {

@@ -1,7 +1,7 @@
 import http from 'k6/http';
 import { arrivalScenario, baseThresholds, ok, randomInt } from './lib/common.js';
 
-const BASE = (__ENV.WCM_BASE_URL || 'http://90.188.89.63:8087').replace(/\/$/, '');
+const BASE = (__ENV.WCM_BASE_URL || 'http://89.104.66.226:8087').replace(/\/$/, '');
 const API = `${BASE}/api/wcm/v0`;
 const PEAK = Number(__ENV.LOAD_PEAK_RPS || 50);
 
